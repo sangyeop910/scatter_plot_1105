@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+
+<head>
+    <title>scatter plot</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/d3-color.v1.min.js"></script>
+    <script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
+    <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+</head>
+
+<body>
+    <select id="mod" onchange="changeMod()">
+        <option value="X">select case / clear</option>
+        <option value="sLen_sWd">case1. Sepal Length : Sepal Width</option>
+        <option value="sLen_pLen">case2. Sepal Length : Petal Length</option>
+        <option value="sLen_pWd">case3. Length : Petal Width</option>
+        <option value="sWd_pLen">case4. Sepal Width : Petal Length</option>
+        <option value="sWd_pWd">case5. Sepal width : Petal Width</option>
+        <option value="pLen_pWd">case6. Petal Length : Petal Width</option>
+    </select>
+
+    <script>
+        var data = new Array();
+        var data2 = new Array();
+        var classes1 = new Array();
+        var classes2 = new Array();
+        var initial1 = new Array();
+        var initial2 = new Array();
+        var sLen = new Array();
+        var sWd = new Array();
+        var pLen = new Array();
+        var pWd = new Array();
+        var xax;
+        var yax;
+        var W = 700;
+        var margin = {
+                top: 10,
+                right: 30,
+                bottom: 30,
+                left: 60
+            },
+            width = 700 - margin.left - margin.right,
+            height = 700 - margin.top - margin.bottom;
+        var state = false;
+
+        function get_parm() {
+            return new Array();
+        }
+
+        function wait(t) {
+            return new Promise(resolve => setTimeout(resolve, t))
+        }
+
+        d3.json("https://raw.githubusercontent.com/sangyeop910/iris/main/iris(150).json")
+            .then(result => {
+                const attrs = Object.keys(result[0]).filter(a => {
+                    return (typeof result[0][a] === "number") && !(new Set(["name", "class", "label", "Species", "island"])).has(a)
+                });
+                data = result;
+                data2 = result.map(d => attrs.map((a, i) => d[a]));
+                classes1 = result.map(d => d.Species);
+                data2 = data2.slice(0, data2.length);
+                var headerLine = "";
+
+                for (var n1 = 0; n1 < data2.length; n1++) {
+                    sLen.push(data2[n1][0]);
+                }
+
+                for (var n2 = 0; n2 < data2.length; n2++) {
+                    sWd.push(data2[n2][1]);
+                }
+
+                for (var n3 = 0; n3 < data2.length; n3++) {
+                    pLen.push(data2[n3][2]);
+                }
+
+                for (var n4 = 0; n4 < data2.length; n4++) {
+                    pWd.push(data2[n4][3]);
+                }
+                draw(initial1, initial2);
+                for (var i1 = 0; i1 < 150; i1++) {
+                    c1[i1].style.display = 'none';
+                }
+                state = true;
+            }).catch(e => {
+                console.log(e)
+            });
+        //===========================================================================================================//
+
+        function draw(q, p) {
+            let svg = d3.select("body")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .attr("viewBox", [0, 0, W, W + 10])
+                .append("g")
+                .attr("transform",
+                    "translate(" + margin.left + "," + margin.top + ")")
+
+            var x = d3.scaleLinear()
+                .domain([0, 10])
+                .range([0, width])
+            svg.append("g")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(x));
+
+            var y = d3.scaleLinear()
+                .domain([0, 10])
+                .range([height, 0])
+            svg.append("g")
+                .call(d3.axisLeft(y));
+
+            let gs = svg.selectAll(".point")
+                .data(data2)
+                .enter()
+                .append("g")
+                .append("circle")
+                .attr("id", "c1")
+                .attr("class", "point")
+                .attr("fill", "none")
+                .attr("stroke", "blue")
+                .style("stroke-width", 1)
+                .attr("cx", (d, i) => x(q[i]))
+                .attr("cy", (d, i) => y(p[i]))
+                .attr("r", 3)
+        }
+
+        /*function changeMod() { //option에 따른 onchange event 처리
+            if (state == true) {
+                var mod = document.getElementById("mod").options[document.getElementById("mod").selectedIndex].value;
+                var wat;
+                if (mod != "X") {
+                    wat = mod.split('_');
+                    xax = wat[0];
+                    yax = wat[1];
+                    console.log(xax, yax);
+                    d3.select("svg").remove();
+                    draw(xax, yax);
+                }
+            }
+        }*/
+        function changeMod() { //option에 따른 onchange event 처리
+            if (state == true) {
+                var mod = document.getElementById("mod").options[document.getElementById("mod").selectedIndex].value;
+                var wat;
+                if (mod != "X") {
+                    /*for (var i1 = 0; i1 < 150; i1++) {
+                        c1[i1].style.display = 'block';
+                    }
+                    wat = mod.split('_');
+                    xax = wat[0];
+                    yax = wat[1];
+                    if (xax == "sLen" && yax == "sWd") {
+                        d3.select("svg").remove();
+                        draw(sLen, sWd);
+                    }
+                    if (xax == "sLen" && yax == "pLen") {
+                        d3.select("svg").remove();
+                        draw(sLen, pLen);
+                    }
+                    if (xax == "sLen" && yax == "pWd") {
+                        d3.select("svg").remove();
+                        draw(sLen, pWd);
+                    }
+                    if (xax == "sWd" && yax == "pLen") {
+                        d3.select("svg").remove();
+                        draw(sWd, pLen);
+                    }
+                    if (xax == "sWd" && yax == "pWd") {
+                        d3.select("svg").remove();
+                        draw(sWd, pWd);
+                    }
+                    if (xax == "pLen" && yax == "pWd") {
+                        d3.select("svg").remove();
+                        draw(pLen, pWd);
+                    }
+                } else {
+                    for (var i1 = 0; i1 < 150; i1++) {
+                        c1[i1].style.display = 'none';
+                    }*/
+
+                    if (mod == 'sLen_sWd') {
+                        d3.select("svg").remove();
+                        draw(sLen, sWd);
+                    }
+                    if (mod == 'sLen_pLen') {
+                        d3.select("svg").remove();
+                        draw(sLen, pLen);
+                    }
+                    if (mod == 'sLen_pWd') {
+                        d3.select("svg").remove();
+                        draw(sLen, pWd);
+                    }
+                    if (mod == 'sWd_pLen') {
+                        d3.select("svg").remove();
+                        draw(sWd, pLen);
+                    }
+                    if (mod == 'sWd_pWd') {
+                        d3.select("svg").remove();
+                        draw(sWd, pWd);
+                    }
+                    if (mod == 'pLen_pWd') {
+                        d3.select("svg").remove();
+                        draw(pLen, pWd);
+                    }
+                } else {
+                    for (var i1 = 0; i1 < 150; i1++) {
+                        c1[i1].style.display = 'none';
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
